@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en" xmlns:th="https://www.thymeleaf.com">
+
+<head>
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- Bootstrap CSS -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+	<title>Employee Registration</title>
+	<style>
+		/* Style for the modal */
+		.modal {
+			display: none;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			border: 1px solid #ccc;
+			padding: 20px;
+			background-color: #fff;
+			z-index: 1;
+			width: 60%;
+			/* Set the width to cover half of the screen */
+			height: 70vh;
+			/* Set the height to cover half of the viewport height */
+			overflow: auto;
+			/* Enable scrolling if content overflows */
+
+		}
+
+		.popup {
+			display: none;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			width: 40%;
+			height: 25%;
+			transform: translate(-50%, -50%);
+			padding: 20px;
+			background-color: #4CAF50;
+			/* Green background color */
+			color: white;
+			text-align: center;
+			border-radius: 5px;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.closeButton {
+			cursor: pointer;
+			color: white;
+			font-weight: bold;
+			position: absolute;
+			top: 5px;
+			right: 10px;
+		}
+
+		/* Container for the search features, aligned to the right */
+		.search-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		label {
+			display: block;
+			margin-bottom: 8px;
+		}
+
+		select,
+		input {
+			margin-bottom: 16px;
+			padding: 8px;
+		}
+	</style>
+</head>
+
+<body>
+	<nav class="navbar navbar-expand-lg navbar-light bg-dark">
+		<div class="container-fluid">
+			<a class="navbar-brand text-white" href="#">Employee Registration</a>
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+				data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+				aria-label="Toggle navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse" id="navbarSupportedContent">
+				<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+					<li class="nav-item">
+						<a class="nav-link active text-white" aria-current="page" href="/">Home</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link text-white" href="employee_list">Employee List</a>
+					</li>
+				</ul>
+				<div>
+					<a class="nav-link text-white" href="employee_register">Register New Employee </a>
+				</div>
+			</div>
+		</div>
+	</nav>
+
+	<div class="search-container">
+		<label for="searchType">Search By:</label>
+		<select id="searchType" onchange="changeSearchField()">
+			<option value=0>select</option>
+			<option value=1>Department</option>
+			<option value=2>Employee Name</option>
+			<option value=3>Employee Number</option>
+		</select>
+		<div id="departmentField" style="display: none;">
+			<label for="department">Department:</label>
+			<select id="departmentSearch">
+				<option value=0>Select Department</option>
+				<option value=1>Administration</option>
+				<option value=2>Information Technology</option>
+				<option value=3>Help Desk</option>
+				<option value=4>Human Resource</option>
+				<option value=5>Operation</option>
+			</select>
+		</div>
+		<div id="employeeNoField" style="display: none;">
+			<label for="searchInput">Employee No:</label>
+			<input type="text" id="searchEmployeeNo" placeholder="Enter employee number">
+		</div>
+		<div id="employeeNameField" style="display: none;">
+			<label for="searchInput">Employee Name:</label>
+			<input type="text" id="searchEmployeeName" placeholder="Enter employee name">
+		</div>
+
+		<!-- Add a button or any other search trigger based on your requirements -->
+		<button onclick="performSearch()">Search</button>
+	</div>
+	<div class="container my-5">
+
+		<h2 style="text-align: center;">Employee List</h2>
+		<table class="table table-striped table-hover" id="employeeTable">
+
+			<thead>
+				<tr>
+					<th scope="col">Id</th>
+					<th scope="col">Employee No</th>
+					<th scope="col">Employee Name</th>
+					<th scope="col">Department</th>
+					<th scope="col">Joining Date</th>
+					<th scope="col">Salary</th>
+					<th scope="col">Action</th>
+				</tr>
+			</thead>
+			<tbody id="employeeTableBody">
+				<tr th:each="employee : ${employees}">
+					<td th:text="${employee.id}"></td>
+					<td th:text="${employee.employeeNo}"></td>
+					<td th:text="${employee.employeeName}"></td>
+					<td th:text="${employee.department}"></td>
+					<td th:text="${employee.joiningDate}"></td>
+					<td th:text="${employee.salary}"></td>
+					<td> <button id="editButton">Edit</button>
+						<button id="deleteButton">Delete</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<!-- The Modal -->
+	<div id="myModal" class="modal my-5 p-5" th:fragment="modal" style="border:1px solid black">
+		<span onclick="closeModal()" style="cursor: pointer;" th:remove="tag"></span>
+		<h4 class="text-center">Edit Employee Details</h4>
+		<form class="col-md-4 offset-md-4">
+			<div class="mb-3">
+				<label for="employeeNo" class="form-label">Employee No:</label>
+				<input type="hidden" name="id" id="id" value=0>
+				<input type="text" class="form-control" name="employeeNo" id="employeeNo">
+			</div>
+			<div class="mb-3">
+				<label for="employeeName" class="form-label">Employee Name:</label>
+				<input type="text" class="form-control" name="employeeName" id="employeeName">
+			</div>
+			<div class="mb-3">
+				<label for="joiningDate" class="form-label">joiningDate</label>
+				<input type="date" class="form-control" name="joiningDate" id="joiningDate">
+			</div>
+			<div class="mb-3">
+				<label for="department" class="form-label">Department:</label>
+				<select id="department" name="department">
+					<option value=0>Select Department</option>
+					<option value=1>Administration</option>
+					<option value=2>Information Technology</option>
+					<option value=3>Help Desk</option>
+					<option value=4>Human Resource</option>
+					<option value=5>Operation</option>
+
+				</select>
+			</div>
+			<div class="mb-3">
+				<label for="salary" class="form-label">Salary:</label>
+				<input type="text" class="form-control" name="salary" id="salary">
+			</div>
+			<center><button type="button" onclick="updateData()">Update</button>
+				<button type="button" onclick="closeModal()">Close</button>
+			</center>
+		</form>
+		<!-- Display the registration success popup if a query parameter is present -->
+		<div class="popup" id="registrationPopup">
+			<span class="closeButton" onclick="closePopup()">&times;</span>
+			<p>Employee Details Updated successfully!</p>
+		</div>
+	</div>
+
+
+
+
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+		crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+		integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+		crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+		integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+		crossorigin="anonymous"></script>
+	<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function () {
+			
+			// method to fetch all employee list while loading the page 
+			$.ajax({
+				type: "GET",
+				url: "/admin/fetchAllEmployees",
+				success: function (response) {
+					updateTable(response);
+					console.log("Success:", response);
+				},
+				error: function (error) {
+					// Handle the error response
+					console.error("Error:", error);
+				}
+			});
+		});
+		
+		// funciton to update the table with employee details fetched  during page load
+		// and search operations
+		function updateTable(response) {
+			// Clear existing Thymeleaf rows
+			$('#employeeTableBody').empty();
+			if (Array.isArray(response)) {
+				response.forEach(function (employee) {
+					var row = '<tr>' +
+						'<td th:text="${employee.id}">' + employee.id + '</td>' +
+						'<td th:text="${employee.employeeNo}">' + employee.employeeNo + '</td>' +
+						'<td th:text="${employee.employeeName}">' + employee.employeeName + '</td>' +
+						'<td th:text="${employee.department}">' + employee.department + '</td>' +
+						'<td th:text="${employee.joiningDate}">' + employee.joiningDate + '</td>' +
+						'<td th:text="${employee.salary}">' + employee.salary + '</td>' +
+						'<td> <button class="editButton" onclick="editEmployee(' + employee.id + ')">Edit</button>' +
+						'<button class="deleteButton" onclick="deleteEmployee(' + employee.id + ')">Delete</button></td>' + '</tr>';
+					$('#employeeTableBody').append(row);
+				});
+			} else {
+				//  the fetched data for a single item
+				var employee = response;
+				var row = '<tr>' +
+					'<td th:text="${employee.id}">' + employee.id + '</td>' +
+					'<td th:text="${employee.employeeNo}">' + employee.employeeNo + '</td>' +
+					'<td th:text="${employee.employeeName}">' + employee.employeeName + '</td>' +
+					'<td th:text="${employee.department}">' + employee.department + '</td>' +
+					'<td th:text="${employee.joiningDate}">' + employee.joiningDate + '</td>' +
+					'<td th:text="${employee.salary}">' + employee.salary + '</td>' +
+					'<td> <button class="editButton" onclick="editEmployee(' + employee.id + ')">Edit</button>' +
+					'<button class="deleteButton" onclick="deleteEmployee(' + employee.id + ')">Delete</button></td>' + '</tr>';
+				$('#employeeTableBody').append(row);
+			}
+		}
+		
+		// function to delte employee data
+		
+		function deleteEmployee(employeeId) {
+			var isConfirmed = confirm("Are you sure you want to delete this employee?");
+
+			// Check if the user confirmed
+			if (isConfirmed) {
+				$.ajax({
+					type: "DELETE",
+					url: "/deleteEmployeeById/" + employeeId,
+					success: function (response) {
+						console.log("Success:", response);
+						// Reload the page after successful deletion
+						location.reload();
+
+					},
+					error: function (error) {
+						// Handle the error response
+						console.error("Error:", error);
+					}
+				});
+			} else {
+				console.log("Deletion canceled");
+			}
+		}
+		
+		/* JavaScript functions to show and hide the modal */
+		function showModal() {
+			var modal = document.getElementById('myModal');
+			modal.style.display = 'block';
+		}
+
+		function closeModal() {
+			var modal = document.getElementById('myModal');
+			modal.style.display = 'none';
+		}
+
+
+//function to edit emploee details
+
+		function editEmployee(employeeId) {
+			console.log(employeeId);
+			$.ajax({
+				type: "GET",
+				url: "/fetchEmployeeById/" + employeeId,
+				success: function (response) {
+					console.log("Success:", response);
+					// Update modal content with the fetched data
+					$('#id').val(response.id);
+					$('#employeeNo').val(response.employeeNo);
+					$('[name=employeeName]').val(response.employeeName);
+					$('[name=joiningDate]').val(response.joiningDate);
+					$('#department').val(response.department);
+					$('[name=salary]').val(response.salary);
+					showModal();
+
+				},
+				error: function (error) {
+					// Handle the error response
+					console.error("Error:", error);
+				}
+			});
+
+		}
+		
+		// function to update data after edit click
+		function updateData() {
+			var id = $("#id").val();
+			var employeeNo = $("#employeeNo").val();
+			var employeeName = $("#employeeName").val();
+			var joiningDate = $("#joiningDate").val();
+			var department = $("#department").val();
+			var salary = $("#salary").val();
+			var formData = {
+				employeeNo: employeeNo,
+				employeeName: employeeName, joiningDate: joiningDate,
+				department: department, salary: salary
+			};
+			$.ajax({
+				type: "PUT",
+				url: "/updateEmployee/" + id,
+				data: formData,
+				success: function (response) {
+					// Handle the success response
+					console.log("Success:", response);
+					document.getElementById("registrationPopup").style.display = "block";
+				},
+				error: function (error) {
+					// Handle the error response
+					console.error("Error:", error);
+				}
+			});
+		}
+		
+		// close pop up
+		function closePopup() {
+			document.getElementById("registrationPopup").style.display = "none";
+			location.reload();
+		}
+		
+		// function to change search field as per selection
+		function changeSearchField() {
+			const searchType = $("#searchType").val();
+			// Hide all fields by default
+			document.getElementById("departmentField").style.display = "none";
+			document.getElementById("employeeNameField").style.display = "none";
+			document.getElementById("employeeNoField").style.display = "none";
+
+			if (searchType == 0) {
+				alert("please choose Search type");
+			} else if (searchType == 1) {
+				document.getElementById("departmentField").style.display = "block";
+			} else if (searchType == 2) {
+				document.getElementById("employeeNameField").style.display = "block";
+			}
+			else if (searchType == 3) {
+				document.getElementById("employeeNoField").style.display = "block";
+			}
+		}
+		
+		// function to search employee tables based on department,employee no or employee name
+		function performSearch() {
+			const searchType = $("#searchType").val();
+			if (searchType == 1) {
+				const departmentId = $("#departmentSearch").val();
+				$.ajax({
+					type: "GET",
+					url: "/searchEmployeeByDepartment/" + departmentId,
+					success: function (response) {
+						updateTable(response);
+						console.log("Success:", response);
+					},
+					error: function (error) {
+						alert("Registration details of employees under this department is not found");
+						$('#employeeTableBody').empty();// Handle the error response
+						console.error("Error:", error);
+					}
+				});
+			} else if (searchType == 2) {
+				const employeeName = $("#searchEmployeeName").val();
+				$.ajax({
+					type: "GET",
+					url: "/searchEmployeeByEmployeeName/" + employeeName,
+					success: function (response) {
+						updateTable(response);
+						console.log("Success:", response);
+					},
+					error: function (error) {
+						alert("Employee not Present in databse");
+						$('#employeeTableBody').empty();
+						console.error("Error:", error);
+					}
+				});
+			} else if (searchType == 3) {
+				const employeeNo = $("#searchEmployeeNo").val();
+				$.ajax({
+					type: "GET",
+					url: "/searchEmployeeByEmployeeNumber/" + employeeNo,
+					success: function (response) {
+						updateTable(response);
+						console.log("Success:", response);
+					},
+					error: function (error) {
+						alert("Employee not Present in databse");
+						$('#employeeTableBody').empty();
+						console.error("Error:", error);
+					}
+				});
+			}
+		}
+	</script>
+</body>
+
+</html>
